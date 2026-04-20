@@ -1,0 +1,32 @@
+{
+  "endpoint": "opc.tcp://windows10.microdone.cn:53530/OPCUA/SimulationServer",
+  "backend_url": "http://127.0.0.1:8080/api/energy/upload",
+  "poll_interval_seconds": 5,
+  "simulation_root": "Simulation",
+  "devices": [
+    {
+      "device_id": 1,
+      "device_name": "主提升机",
+      "node_name": "LiftMachine",
+      "base_voltage": 380.0,
+      "base_power": 85.0,
+      "base_energy_total": 1000.0
+    },
+    {
+      "device_id": 2,
+      "device_name": "主通风机",
+      "node_name": "MainFan",
+      "base_voltage": 380.0,
+      "base_power": 120.0,
+      "base_energy_total": 2000.0
+    },
+    {
+      "device_id": 3,
+      "device_name": "排水泵",
+      "node_name": "DrainPump",
+      "base_voltage": 380.0,
+      "base_power": 60.0,
+      "base_energy_total": 500.0
+    }
+  ]
+}

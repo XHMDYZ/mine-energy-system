@@ -1,0 +1,31 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node / Vue
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+
+# Go
+backend/tmp/
+*.exe
+
+# Logs
+*.log
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / config
+.env
+*.env

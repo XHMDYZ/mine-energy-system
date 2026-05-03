@@ -29,3 +29,7 @@ Thumbs.db
 # Env / config
 .env
 *.env
+
+# Deep learning generated files
+deep_learning/models/*.pt
+deep_learning/models/*.pkl

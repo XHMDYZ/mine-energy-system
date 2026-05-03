@@ -1,0 +1,19 @@
+{
+  "database": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "",
+    "database": "mine_energy"
+  },
+  "model": {
+    "sequence_length": 10,
+    "features": ["voltage", "current", "power"],
+    "hidden_size": 32,
+    "num_layers": 1,
+    "epochs": 60,
+    "batch_size": 16,
+    "learning_rate": 0.001,
+    "threshold_percentile": 95
+  }
+}

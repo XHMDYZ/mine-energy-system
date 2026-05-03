@@ -1,0 +1,7 @@
+{
+  "device_id": 1,
+  "threshold": 1.771543562412262,
+  "threshold_percentile": 95.0,
+  "train_sequence_count": 776,
+  "train_record_count": 785
+}

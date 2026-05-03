@@ -3,6 +3,13 @@
   "backend_url": "http://127.0.0.1:8080/api/energy/upload",
   "poll_interval_seconds": 5,
   "simulation_root": "Simulation",
+   "mysql": {
+    "host": "127.0.0.1",
+    "port": 3306,
+    "user": "root",
+    "password": "Root123456",
+    "database": "mine_energy"
+  },
   "devices": [
     {
       "device_id": 1,

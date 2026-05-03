@@ -5,9 +5,10 @@ import (
 	"backend/models"
 	"backend/services"
 	"net/http"
-	"time"
 	"strconv"
-	
+	"strings"
+	"time"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -17,6 +18,8 @@ type EnergyUploadRequest struct {
 	Current     float64 `json:"current"`
 	Power       float64 `json:"power"`
 	EnergyTotal float64 `json:"energy_total"`
+	DataSource  string  `json:"data_source"`
+	CollectTime string  `json:"collect_time"`
 }
 
 func UploadEnergyData(c *gin.Context) {
@@ -29,7 +32,24 @@ func UploadEnergyData(c *gin.Context) {
 		return
 	}
 
-	// 1. 保存历史数据
+	// 1. 保存历史数据（按东八区解析采集时间）
+	loc, err := time.LoadLocation("Asia/Shanghai")
+	if err != nil {
+		loc = time.FixedZone("CST", 8*3600)
+	}
+
+	recordTime := time.Now().In(loc)
+	if strings.TrimSpace(req.CollectTime) != "" {
+		if t, err := time.ParseInLocation("2006-01-02 15:04:05", req.CollectTime, loc); err == nil {
+			recordTime = t
+		}	
+	}
+
+	dataSource := strings.TrimSpace(req.DataSource)
+	if dataSource == "" {
+		dataSource = "python_mock"
+	}
+
 	data := models.EnergyHistory{
 		DeviceID:        req.DeviceID,
 		Voltage:         req.Voltage,
@@ -37,8 +57,8 @@ func UploadEnergyData(c *gin.Context) {
 		Power:           req.Power,
 		EnergyIncrement: 0,
 		EnergyTotal:     req.EnergyTotal,
-		RecordTime:      time.Now(),
-		DataSource:      "python_mock",
+		RecordTime:      recordTime,
+		DataSource:      dataSource,
 	}
 
 	if err := config.DB.Create(&data).Error; err != nil {
@@ -118,6 +138,7 @@ func GetOverviewData(c *gin.Context) {
 		},
 	})
 }
+
 type EnergyRankingItem struct {
 	DeviceID    uint    `json:"device_id"`
 	DeviceName  string  `json:"device_name"`
@@ -159,6 +180,7 @@ func GetEnergyRanking(c *gin.Context) {
 		"data":    result,
 	})
 }
+
 type CompareResult struct {
 	DeviceID     uint    `json:"device_id"`
 	DeviceName   string  `json:"device_name"`

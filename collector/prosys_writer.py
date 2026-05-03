@@ -60,13 +60,23 @@ def main():
 
         for dev in devices:
             nodes = get_device_nodes(client, simulation_root, dev["node_name"])
+
+            current_total = float(nodes["energy_total"].get_value())
+            start_total = round(current_total, 2)
+
             device_runtime[dev["node_name"]] = {
                 "config": dev,
                 "nodes": nodes,
-                "energy_total": dev["base_energy_total"]
+                "energy_total": start_total
             }
 
+            print(f"初始化 [{dev['device_name']}] energy_total = {start_total}")
+
+        cycle_count = 0
+
         while True:
+            cycle_count += 1
+
             for _, item in device_runtime.items():
                 dev = item["config"]
                 nodes = item["nodes"]
@@ -74,21 +84,31 @@ def main():
                 voltage = round(random.uniform(dev["base_voltage"] - 10, dev["base_voltage"] + 10), 2)
                 power = round(random.uniform(dev["base_power"] - 10, dev["base_power"] + 10), 2)
 
-                # 偶尔制造异常峰值，便于后续报警实验
-                if random.random() < 0.1:
-                    power = round(power * random.uniform(2.0, 3.0), 2)
+             # 主通风机：保留你之前的强异常注入（用于异常检测验证）
+                if dev["device_name"] == "主通风机" and 3 <= cycle_count <= 5:
+                    voltage = 380.00
+                    power = 220.00
+                    print(f"*** 注入异常 [{dev['device_name']}]：功率超限测试 ***")
 
                 current = round(power / voltage * 100, 2)
+
+                # 正常累计值先递增
                 item["energy_total"] = round(item["energy_total"] + power / 100, 2)
+                write_energy_total = item["energy_total"]
+
+                # 排水泵：第8轮做一次“累计能耗回跳”测试
+                if dev["device_name"] == "排水泵" and cycle_count == 8:
+                    write_energy_total = round(item["energy_total"] - 30, 2)
+                    print(f"*** 注入异常 [{dev['device_name']}]：累计能耗回跳测试，写入值={write_energy_total} ***")
 
                 write_float(nodes["voltage"], voltage)
                 write_float(nodes["current"], current)
                 write_float(nodes["power"], power)
-                write_float(nodes["energy_total"], item["energy_total"])
+                write_float(nodes["energy_total"], write_energy_total)
 
                 print(
                     f"写入成功 [{dev['device_name']}] -> "
-                    f"voltage={voltage}, current={current}, power={power}, energy_total={item['energy_total']}"
+                    f"voltage={voltage}, current={current}, power={power}, energy_total={write_energy_total}"
                 )
 
             print("等待 5 秒后继续写入...\n")

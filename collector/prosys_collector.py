@@ -1,5 +1,6 @@
 import json
 import time
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -55,12 +56,12 @@ def get_mysql_conn(cfg):
     return pymysql.connect(
         host=db_cfg["host"],
         port=db_cfg["port"],
-        user=db_cfg["user"],
-        password=db_cfg["password"],
+        user=os.getenv("MYSQL_USER", db_cfg["user"]),
+        password=os.getenv("MYSQL_PASSWORD", db_cfg.get("password", "")),
         database=db_cfg["database"],
         charset="utf8mb4",
         cursorclass=pymysql.cursors.DictCursor,
-        autocommit=True
+        autocommit=True,
     )
 
 

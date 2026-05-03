@@ -3,7 +3,7 @@ package main
 import (
 	"backend/config"
 	"backend/router"
-	
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )

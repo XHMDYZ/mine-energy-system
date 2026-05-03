@@ -4,6 +4,7 @@ import (
 	"backend/config"
 	"backend/models"
 	"backend/services"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -32,7 +33,6 @@ func UploadEnergyData(c *gin.Context) {
 		return
 	}
 
-	// 1. 保存历史数据（按东八区解析采集时间）
 	loc, err := time.LoadLocation("Asia/Shanghai")
 	if err != nil {
 		loc = time.FixedZone("CST", 8*3600)
@@ -42,7 +42,7 @@ func UploadEnergyData(c *gin.Context) {
 	if strings.TrimSpace(req.CollectTime) != "" {
 		if t, err := time.ParseInLocation("2006-01-02 15:04:05", req.CollectTime, loc); err == nil {
 			recordTime = t
-		}	
+		}
 	}
 
 	dataSource := strings.TrimSpace(req.DataSource)
@@ -50,12 +50,35 @@ func UploadEnergyData(c *gin.Context) {
 		dataSource = "python_mock"
 	}
 
+	// 1. 先校验设备是否存在，避免不存在的 device_id 写入历史表
+	var device models.DeviceInfo
+	if err := config.DB.Where("device_id = ?", req.DeviceID).First(&device).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "设备不存在，数据未保存",
+		})
+		return
+	}
+
+	// 2. 计算本次能耗增量
+	energyIncrement := 0.0
+	var last models.EnergyHistory
+	if err := config.DB.
+		Where("device_id = ?", req.DeviceID).
+		Order("history_id desc").
+		First(&last).Error; err == nil {
+		energyIncrement = req.EnergyTotal - last.EnergyTotal
+		if energyIncrement < 0 {
+			energyIncrement = 0
+		}
+	}
+
+	// 3. 保存历史数据
 	data := models.EnergyHistory{
 		DeviceID:        req.DeviceID,
 		Voltage:         req.Voltage,
 		Current:         req.Current,
 		Power:           req.Power,
-		EnergyIncrement: 0,
+		EnergyIncrement: energyIncrement,
 		EnergyTotal:     req.EnergyTotal,
 		RecordTime:      recordTime,
 		DataSource:      dataSource,
@@ -68,15 +91,13 @@ func UploadEnergyData(c *gin.Context) {
 		return
 	}
 
-	// 2. 查设备信息
-	var device models.DeviceInfo
-	if err := config.DB.Where("device_id = ?", req.DeviceID).First(&device).Error; err == nil {
-		// 3. 执行融合异常检测
-		detectResult := services.DetectAbnormal(device, data)
+	// 4. 执行融合异常检测
+	detectResult := services.DetectAbnormal(device, data)
 
-		// 4. 保存异常结果和报警记录
-		if detectResult.IsAbnormal {
-			_ = services.SaveAbnormalAndAlarm(device, data, detectResult)
+	// 5. 保存异常结果和报警记录
+	if detectResult.IsAbnormal {
+		if err := services.SaveAbnormalAndAlarm(device, data, detectResult); err != nil {
+			fmt.Println("异常检测结果保存失败：", err)
 		}
 	}
 

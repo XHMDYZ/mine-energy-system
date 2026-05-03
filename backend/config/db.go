@@ -2,6 +2,7 @@ package config
 
 import (
 	"fmt"
+	"os"
 
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -10,7 +11,10 @@ import (
 var DB *gorm.DB
 
 func InitDB() {
-	dsn := "root:Root123456@tcp(127.0.0.1:3306)/mine_energy?charset=utf8mb4&parseTime=True&loc=Asia%2FShanghai"
+	dsn := os.Getenv("MYSQL_DSN")
+	if dsn == "" {
+		panic("未设置环境变量 MYSQL_DSN")
+	}
 
 	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
